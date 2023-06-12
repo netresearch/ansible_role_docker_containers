@@ -1,0 +1,36 @@
+# We were testing how we could get Docker to run in this Docker container, DinD basically.
+# This is funky, but it works.
+
+FROM geerlingguy/docker-debian12-ansible:latest
+
+RUN \
+        apt-get update \
+    && \
+        apt-get install -y \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg-agent \
+            software-properties-common
+
+RUN \
+        install -m 0755 -d /etc/apt/keyrings\
+    && \
+        curl -fsSL https://download.docker.com/linux/debian/gpg | \
+        gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && \
+        echo \
+            "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+            "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y docker-ce docker-ce-cli containerd.i
+
+RUN pip3 install docker six
+
+# Works with this command:
+# docker run -it --rm \
+# --privileged \
+# -v /sys/fs/cgroup:/sys/fs/cgroup \
+# --cgroupns=host \
+# thisdockerimage

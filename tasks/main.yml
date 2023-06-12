@@ -1,0 +1,31 @@
+---
+- name: Ensure Docker service exists and is started
+  ansible.builtin.service:
+    name: docker
+    state: started
+  register: docker_status
+  ignore_errors: true
+
+- name: Inform user that the Docker daemon isn't running
+  ansible.builtin.fail:
+    msg: Make sure your host has the Docker daemon installed and running
+  when: >
+    docker_status.failed | bool or docker_status.state != "started"
+
+- name: "Start container"
+  loop: "{{ netresearch_docker_containers }}"
+  community.general.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    pull: true
+    state: "{{ item.state | default(omit) }}"
+    detach: true
+    networks: "{{ item.networks | default(omit) }}"
+    ports: "{{ item.ports | default([], true)}}"
+    env: "{{ item.env | default({}, true)}}"
+    labels: "{{ item.labels | default(omit) }}"
+    container_default_behavior: no_defaults
+    command: "{{ item.command | default(omit) }}"
+    command_handling: correct
+    mounts: "{{ item.mounts | default(omit) }}"
+    restart_policy: "{{ item.restart_policy | default('unless-stopped', true) }}"

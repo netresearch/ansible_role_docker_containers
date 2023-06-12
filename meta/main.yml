@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  role_name: docker_containers
+  namespace: netresearch
+  author: DevMiner <devminer@devminer.xyz>
+  description: This Ansible role provisions all configured Docker containers
+  company: Netresearch DTT GmbH
+  license: MIT
+  min_ansible_version: "2.7"
+  platforms:
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+  galaxy_tags: []
+dependencies: []

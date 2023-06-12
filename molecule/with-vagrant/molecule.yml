@@ -1,0 +1,35 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: vagrant
+
+platforms:
+  - name: instance
+    box: debian/bookworm64
+    groups:
+      - containers
+
+provisioner:
+  name: ansible
+  options:
+    D: true
+  inventory:
+    group_vars:
+      containers:
+        netresearch_docker_containers:
+          - name: whoami
+            image: traefik/whoami
+          - name: nginx
+            image: nginx
+
+verifier:
+  name: ansible
+
+lint: |
+  set -e
+  yamllint .
+  ansible-lint

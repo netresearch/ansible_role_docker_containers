@@ -1,0 +1,28 @@
+---
+stages:
+  - validate
+  - test
+
+validate:
+  image:
+    name: registry.netresearch.de/netresearch-administration/buildbox
+  stage: validate
+  before_script:
+    - export LANG=C.UTF-8
+    - rm -rf .kitchen
+    - ansible-galaxy collection install community.general
+    - ansible --version
+    - ansible-lint --version
+    - yamllint --version
+  script:
+    - ansible-lint ./ -v
+    - yamllint ./
+
+test:
+  stage: test
+  tags:
+    - molecule
+  script: |
+    molecule test -- \
+      --extra-vars "docker_registry_username=${CI_REGISTRY_USER}" \
+      --extra-vars "docker_registry_password=${CI_REGISTRY_PASSWORD}"
