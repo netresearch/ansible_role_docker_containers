@@ -71,6 +71,6 @@ molecule test
 - `molecule`
 - A molecule driver depending on which scenario you want to run:
   - `default` => `molecule-docker`
-  - `with-vagrant`=> `molecule_vagrant`
+  - `with-vagrant` => `molecule_vagrant`
 
 For further information we have included the installation guide for `molecule` [here](./molecule/default/INSTALL.rst).
