@@ -6,7 +6,7 @@ galaxy_info:
   description: This Ansible role provisions all configured Docker containers
   company: Netresearch DTT GmbH
   license: MIT
-  min_ansible_version: "2.7"
+  min_ansible_version: "2.15"
   platforms:
     - name: Debian
       versions:
