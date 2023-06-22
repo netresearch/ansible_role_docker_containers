@@ -2,6 +2,7 @@ on: push
 
 jobs:
   molecule:
+    name: Run molecule against role
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -10,6 +11,21 @@ jobs:
         with:
           cache: pip
 
-      - run: python3 -m pip install ansible molecule yamllint molecule-docker
+      - run: python3 -m pip install ansible molecule molecule-docker
 
       - run: molecule test
+
+  lint:
+    name: Lint role
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          cache: pip
+
+      - run: python3 -m pip install ansible ansible-lint yamllint
+      - run: ansible-galaxy install -r requirements.yml
+
+      - run: ansible-lint .
