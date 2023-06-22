@@ -21,8 +21,8 @@
     state: "{{ item.state | default(omit) }}"
     detach: true
     networks: "{{ item.networks | default(omit) }}"
-    ports: "{{ item.ports | default([], true)}}"
-    env: "{{ item.env | default({}, true)}}"
+    ports: "{{ item.ports | default([], true) }}"
+    env: "{{ item.env | default({}, true) }}"
     labels: "{{ item.labels | default(omit) }}"
     container_default_behavior: no_defaults
     command: "{{ item.command | default(omit) }}"
