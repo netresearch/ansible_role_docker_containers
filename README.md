@@ -74,3 +74,7 @@ molecule test
   - `with-vagrant` => `molecule_vagrant`
 
 For further information we have included the installation guide for `molecule` [here](./molecule/default/INSTALL.rst).
+
+## License
+
+This Ansible role is licensed under the [MIT License](./LICENSE).
