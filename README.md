@@ -45,7 +45,7 @@ netresearch_docker_containers:
     mounts:
       - type: bind
         source: /srv/app
-        targets: /data
+        target: /data
 
   - name: traefik
     image: traefik/traefik:latest
