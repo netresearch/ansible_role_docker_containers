@@ -16,3 +16,22 @@
         that:
           - "item.exists"
           - "item.container.State.Status == 'running'"
+
+    - name: Uniquify network names
+      ansible.builtin.set_fact:
+        network_names: "{{ network_names | default([]) + [ item.1 ] }}"
+      with_subelements:
+        - "{{ netresearch_docker_containers }}"
+        - networks
+
+    - name: "Get status of networks"
+      loop: "{{ network_names | flatten | unique }}"
+      register: network_status
+      community.docker.docker_network_info:
+        name: "{{ item.name }}"
+
+    - name: "Network assertions"
+      loop: "{{ network_status.results }}"
+      ansible.builtin.assert:
+        that:
+          - "item.exists"

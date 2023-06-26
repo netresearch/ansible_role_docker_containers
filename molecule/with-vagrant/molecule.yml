@@ -23,8 +23,14 @@ provisioner:
         netresearch_docker_containers:
           - name: whoami
             image: traefik/whoami
+            networks:
+              - name: whoami
+              - name: traefik
           - name: nginx
             image: nginx
+            networks:
+              - name: nginx
+              - name: traefik
 
 verifier:
   name: ansible
