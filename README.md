@@ -78,3 +78,9 @@ For further information we have included the installation guide for `molecule` [
 ## License
 
 This Ansible role is licensed under the [MIT License](./LICENSE).
+
+## Contributing
+
+Feel free to contribute by creating a Pull Request!
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages and the default `gofmt` formatting rules.
