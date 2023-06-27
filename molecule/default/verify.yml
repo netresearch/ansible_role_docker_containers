@@ -19,13 +19,13 @@
 
     - name: Uniquify network names
       ansible.builtin.set_fact:
-        network_names: "{{ network_names | default([]) + [ item.1 ] }}"
+        netresearch_docker_containers_network_names: "{{ netresearch_docker_containers_network_names | default([]) + [ item.1 ] }}"
       with_subelements:
         - "{{ netresearch_docker_containers }}"
         - networks
 
     - name: "Get status of networks"
-      loop: "{{ network_names | flatten | unique }}"
+      loop: "{{ netresearch_docker_containers_network_names | flatten | unique }}"
       register: network_status
       community.docker.docker_network_info:
         name: "{{ item.name }}"

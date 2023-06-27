@@ -14,13 +14,14 @@
 
 - name: Uniquify network names
   ansible.builtin.set_fact:
-    network_names: "{{ network_names | default([]) + [ item.1 ] }}"
+    netresearch_docker_containers_network_names: >
+      {{ netresearch_docker_containers_network_names | default([]) + [ item.1 ] }}
   with_subelements:
     - "{{ netresearch_docker_containers }}"
     - networks
 
 - name: Create networks
-  loop: "{{ network_names | default([]) | flatten | unique }}"
+  loop: "{{ netresearch_docker_containers_network_names | default([]) | flatten | unique }}"
   when: item.name != "default"
   community.general.docker_network:
     name: "{{ item.name }}"
