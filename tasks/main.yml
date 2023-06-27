@@ -20,7 +20,7 @@
     - networks
 
 - name: Create networks
-  loop: "{{ network_names | flatten | unique }}"
+  loop: "{{ network_names | default([]) | flatten | unique }}"
   when: item.name != "default"
   community.general.docker_network:
     name: "{{ item.name }}"
