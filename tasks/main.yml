@@ -26,20 +26,6 @@
   community.general.docker_network:
     name: "{{ item.name }}"
 
-- name: "Start container"
+- name: Start container
+  ansible.builtin.include_tasks: container.yml
   loop: "{{ netresearch_docker_containers }}"
-  community.general.docker_container:
-    name: "{{ item.name }}"
-    image: "{{ item.image }}"
-    pull: true
-    state: "{{ item.state | default(omit) }}"
-    detach: true
-    networks: "{{ item.networks | default(omit) }}"
-    ports: "{{ item.ports | default([], true) }}"
-    env: "{{ item.env | default({}, true) }}"
-    labels: "{{ item.labels | default(omit) }}"
-    container_default_behavior: no_defaults
-    command: "{{ item.command | default(omit) }}"
-    command_handling: correct
-    mounts: "{{ item.mounts | default(omit) }}"
-    restart_policy: "{{ item.restart_policy | default('unless-stopped', true) }}"

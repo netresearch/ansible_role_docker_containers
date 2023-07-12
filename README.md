@@ -22,6 +22,9 @@ This Ansible role provides a way to deploy multiple Docker containers.
 netresearch_docker_containers:
   - name: string
     image: string
+    login: # dictionary or undefined
+      username: string
+      password: string
     networks: [] # Just like the one in `community.general.docker_container`
     labels: {} # Just like the one in `community.general.docker_container`
     restart_policy: string # 'no' | 'always' | 'unless-stopped'
@@ -55,6 +58,18 @@ netresearch_docker_containers:
       - "443:443"
     networks:
       - name: "traefik-network"
+
+  - name: raybeam
+    image: ghcr.io/netresearch/raybeam:latest
+    login: # This will log into the GitHub Container Registry
+      username: "yourusername"
+      password: "yourpassword"
+    restart_policy: unless-stopped
+    networks:
+      - name: "traefik-network"
+    labels:
+      - traefik.enable=true
+      # ...
 ```
 
 ## Testing
