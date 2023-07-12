@@ -1,0 +1,38 @@
+---
+# {{ item }} is the current item in the loop, which is being passed in from
+# main.yml since Ansible doesn't support `loop`ing `block` statements.
+# ref: https://ericsysmin.com/2019/06/20/how-to-loop-blocks-of-code-in-ansible/
+
+- name: Log into container registry
+  community.general.docker_login:
+    registry: "{{ (item.image.split('/') | length) > 1 | ternary(item.image.split('/')[0], omit) }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password }}"
+  when: (item.login | default(false)) is mapping
+  changed_when: false
+
+- name: "Start container {{ item.name }}"
+  community.general.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    pull: true
+    state: "{{ item.state | default(omit) }}"
+    detach: true
+    networks: "{{ item.networks | default(omit) }}"
+    ports: "{{ item.ports | default([], true) }}"
+    env: "{{ item.env | default({}, true) }}"
+    labels: "{{ item.labels | default(omit) }}"
+    container_default_behavior: no_defaults
+    command: "{{ item.command | default(omit) }}"
+    command_handling: correct
+    mounts: "{{ item.mounts | default(omit) }}"
+    restart_policy: "{{ item.restart_policy | default('unless-stopped', true) }}"
+
+- name: Log out of container registry
+  community.general.docker_login:
+    registry: "{{ (item.image.split('/') | length) > 1 | ternary(item.image.split('/')[0], omit) }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password }}"
+    state: absent
+  when: (item.login | default(false)) is mapping
+  changed_when: false
