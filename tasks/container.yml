@@ -28,6 +28,7 @@
     state: "{{ item.state | default(omit) }}"
     detach: true
     networks: "{{ item.networks | default(omit) }}"
+    network_mode: "{{ item.network_mode | default(omit) }}"
     ports: "{{ item.ports | default([], true) }}"
     env: "{{ item.env | default({}, true) }}"
     labels: "{{ item.labels | default(omit) }}"

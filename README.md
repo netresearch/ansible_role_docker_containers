@@ -26,6 +26,7 @@ netresearch_docker_containers:
       username: string
       password: string
     networks: [] # Just like the one in `community.general.docker_container`
+    network_mode: string # Just like the one in `community.general.docker_container`
     labels: {} # Just like the one in `community.general.docker_container`
     restart_policy: string # 'no' | 'always' | 'unless-stopped'
     ports: [] # Just like the one in `community.general.docker_container`
