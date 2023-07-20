@@ -38,6 +38,15 @@ provisioner:
             networks:
               - name: nginx
               - name: traefik
+          - name: registry_login
+            image: nginx
+            login:
+              registry: docker.io
+              username: ${DOCKER_USERNAME}
+              password: ${DOCKER_PASSWORD}
+            networks:
+              - name: nginx
+              - name: traefik
 
 verifier:
   name: ansible
