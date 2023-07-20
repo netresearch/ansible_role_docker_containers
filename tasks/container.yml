@@ -3,21 +3,12 @@
 # main.yml since Ansible doesn't support `loop`ing `block` statements.
 # ref: https://ericsysmin.com/2019/06/20/how-to-loop-blocks-of-code-in-ansible/
 
-- name: Set login required fact
-  ansible.builtin.set_fact:
-    _login_required: "{{ (item.login | default(false)) is mapping }}"
-
-- name: Set registry fact
-  ansible.builtin.set_fact:
-    _registry: "{{ ((item.image.split('/') | length) > 1) | ternary(item.image.split('/')[0], omit) }}"
-  when: _login_required
-
 - name: Log into container registry
   community.general.docker_login:
-    registry: "{{ _registry }}"
+    registry: "{{ item.login.registry }}"
     username: "{{ item.login.username }}"
     password: "{{ item.login.password }}"
-  when: _login_required
+  when: (item.login | default(false)) is mapping
   changed_when: false
 
 - name: "Start container {{ item.name }}"
@@ -40,9 +31,9 @@
 
 - name: Log out of container registry
   community.general.docker_login:
-    registry: "{{ _registry }}"
+    registry: "{{ item.login.registry }}"
     username: "{{ item.login.username }}"
     password: "{{ item.login.password }}"
     state: absent
-  when: _login_required
+  when: (item.login | default(false)) is mapping
   changed_when: false
