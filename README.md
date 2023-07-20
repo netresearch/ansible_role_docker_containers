@@ -23,6 +23,7 @@ netresearch_docker_containers:
   - name: string
     image: string
     login: # dictionary or undefined
+      registry: string
       username: string
       password: string
     networks: [] # Just like the one in `community.general.docker_container`
@@ -63,6 +64,7 @@ netresearch_docker_containers:
   - name: raybeam
     image: ghcr.io/netresearch/raybeam:latest
     login: # This will log into the GitHub Container Registry
+      registry: "ghcr.io"
       username: "yourusername"
       password: "yourpassword"
     restart_policy: unless-stopped
