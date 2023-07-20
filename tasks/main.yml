@@ -19,6 +19,7 @@
   with_subelements:
     - "{{ netresearch_docker_containers }}"
     - networks
+  no_log: true
 
 - name: Create networks
   loop: "{{ netresearch_docker_containers_network_names | default([]) | flatten | unique }}"
