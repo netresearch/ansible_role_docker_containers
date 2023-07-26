@@ -47,6 +47,13 @@ provisioner:
             networks:
               - name: nginx
               - name: traefik
+          - name: no_networks
+            image: traefik/whoami
+            login:
+              registry: docker.io
+              username: ${DOCKER_USERNAME}
+              password: ${DOCKER_PASSWORD}
+            networks: []
 
 verifier:
   name: ansible

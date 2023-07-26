@@ -22,17 +22,26 @@ This Ansible role provides a way to deploy multiple Docker containers.
 netresearch_docker_containers:
   - name: string
     image: string
-    login: # dictionary or undefined
+    # dictionary or undefined
+    login:
       registry: string
       username: string
       password: string
-    networks: [] # Just like the one in `community.general.docker_container`
-    network_mode: string # Just like the one in `community.general.docker_container`
-    labels: {} # Just like the one in `community.general.docker_container`
-    restart_policy: string # 'no' | 'always' | 'unless-stopped'
-    ports: [] # Just like the one in `community.general.docker_container`
-    env: {} # Just like the one in `community.general.docker_container`
-    mounts: [] # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.general.docker_container`
+    # You have to provide this, an empty array is fine.
+    networks: []
+    # Just like the one in `community.general.docker_container`
+    network_mode: string
+    # Just like the one in `community.general.docker_container`
+    labels: {}
+    # Just like the one in `community.general.docker_container`
+    restart_policy: string
+    # Just like the one in `community.general.docker_container`
+    ports: []
+    # Just like the one in `community.general.docker_container`
+    env: {}
+    # Just like the one in `community.general.docker_container`
+    mounts: []
 ```
 
 ### Example:
