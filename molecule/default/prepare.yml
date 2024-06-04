@@ -5,6 +5,7 @@
   vars:
     pip_install_packages:
       - docker
+      - 'requests<2.32.0'
 
   pre_tasks:
     - name: Update cache

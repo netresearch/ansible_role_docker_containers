@@ -11,7 +11,8 @@ jobs:
         with:
           cache: pip
 
-      - run: python3 -m pip install ansible molecule molecule-docker
+      # TODO: Remove `requests` version pin https://github.com/ansible-community/molecule-plugins/issues/256
+      - run: python3 -m pip install ansible molecule molecule-docker 'requests<2.32.0'
 
       - run: molecule test
 
