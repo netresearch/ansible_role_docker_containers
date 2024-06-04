@@ -95,6 +95,24 @@ netresearch_docker_containers:
         capabilities:
           - - gpu
             - utility
+
+  - name: nvidia-gpu-exporter
+    image: utkuozdemir/nvidia_gpu_exporter:1.1.0
+    ports:
+      - "9835:9835"
+    devices:
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia0:/dev/nvidia0
+    mounts:
+      - type: bind
+        source: /usr/bin/nvidia-smi
+        target: /usr/bin/nvidia-smi
+      - type: bind
+        source: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
+        target: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
+      - type: bind
+        source: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+        target: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
 ```
 
 ## Testing
