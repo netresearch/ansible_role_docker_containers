@@ -28,6 +28,7 @@
     command_handling: correct
     mounts: "{{ item.mounts | default(omit) }}"
     restart_policy: "{{ item.restart_policy | default('unless-stopped', true) }}"
+    device_requests: "{{ item.device_requests | default(omit) }}"
 
 - name: Log out of container registry
   community.general.docker_login:

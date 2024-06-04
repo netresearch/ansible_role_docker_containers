@@ -42,6 +42,8 @@ netresearch_docker_containers:
     env: {}
     # Just like the one in `community.general.docker_container`
     mounts: []
+    # Just like the one in `community.general.docker_container`
+    device_requests: []
 ```
 
 ### Example:
@@ -82,6 +84,17 @@ netresearch_docker_containers:
     labels:
       - traefik.enable=true
       # ...
+
+  - name: ollama
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    device_requests:
+      - driver: nvidia
+        count: -1
+        capabilities:
+          - - gpu
+            - utility
 ```
 
 ## Testing
