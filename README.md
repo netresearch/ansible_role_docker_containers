@@ -89,6 +89,7 @@ netresearch_docker_containers:
     image: ollama/ollama
     ports:
       - "11434:11434"
+    runtime: nvidia
     device_requests:
       - driver: nvidia
         count: -1
