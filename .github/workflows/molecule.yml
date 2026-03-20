@@ -16,7 +16,7 @@ jobs:
 
       - run: molecule test
         env:
-          ALLOW_BROKEN_CONDITIONALS: "true"
+          ANSIBLE_ALLOW_BROKEN_CONDITIONALS: "true"
 
   lint:
     name: Lint role
