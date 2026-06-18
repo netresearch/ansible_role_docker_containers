@@ -10,12 +10,20 @@
       community.docker.docker_container_info:
         name: "{{ item.name }}"
 
-    - name: "Container assertions"
+    - name: "Present container assertions"
       loop: "{{ status.results }}"
+      when: (item.item.state | default('started')) != 'absent'
       ansible.builtin.assert:
         that:
           - "item.exists"
           - "item.container.State.Status == 'running'"
+
+    - name: "Absent container assertions"
+      loop: "{{ status.results }}"
+      when: (item.item.state | default('started')) == 'absent'
+      ansible.builtin.assert:
+        that:
+          - "not item.exists"
 
     - name: Uniquify network names
       ansible.builtin.set_fact:
@@ -23,6 +31,7 @@
       with_subelements:
         - "{{ netresearch_docker_containers }}"
         - networks
+        - skip_missing: true
 
     - name: "Get status of networks"
       loop: "{{ netresearch_docker_containers_network_names | flatten | unique }}"
