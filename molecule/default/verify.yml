@@ -16,7 +16,7 @@
       ansible.builtin.assert:
         that:
           - "item.exists"
-          - "item.container.State.Status == 'running'"
+          - "item.exists and item.container.State.Status == 'running'"
 
     - name: "Absent container assertions"
       loop: "{{ status.results }}"
@@ -34,7 +34,7 @@
         - skip_missing: true
 
     - name: "Get status of networks"
-      loop: "{{ netresearch_docker_containers_network_names | flatten | unique }}"
+      loop: "{{ netresearch_docker_containers_network_names | default([]) | flatten | unique }}"
       register: network_status
       community.docker.docker_network_info:
         name: "{{ item.name }}"
