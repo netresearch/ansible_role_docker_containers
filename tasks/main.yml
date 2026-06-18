@@ -19,6 +19,7 @@
   with_subelements:
     - "{{ netresearch_docker_containers }}"
     - networks
+    - skip_missing: true
   no_log: true
 
 - name: Create networks

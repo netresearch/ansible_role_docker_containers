@@ -44,6 +44,13 @@ provisioner:
           - name: no_networks
             image: traefik/whoami
             networks: []
+          # Tombstone shape: state: absent with the `networks` key omitted
+          # entirely. Regression guard for the with_subelements skip_missing
+          # fix — an empty list ([]) does not reproduce the failure, a missing
+          # key does.
+          - name: decommissioned
+            image: traefik/whoami
+            state: absent
 
 verifier:
   name: ansible
