@@ -10,7 +10,6 @@
     password: "{{ item.login.password }}"
   when: (item.login | default(false)) is mapping
   changed_when: false
-  no_log: true
 
 - name: "Start container {{ item.name }}"
   community.general.docker_container:
@@ -41,4 +40,3 @@
     state: absent
   when: (item.login | default(false)) is mapping
   changed_when: false
-  no_log: true
