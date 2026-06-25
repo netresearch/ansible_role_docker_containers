@@ -1,5 +1,8 @@
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   molecule:
     name: Run molecule against role
