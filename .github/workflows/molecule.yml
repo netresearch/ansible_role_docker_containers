@@ -1,5 +1,8 @@
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   molecule:
     name: Run molecule against role
@@ -32,3 +35,38 @@ jobs:
       - run: ansible-galaxy install -r requirements.yml
 
       - run: ansible-lint .
+
+  no-log-leak:
+    name: Guard container login credentials against play-output leak
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          cache: pip
+
+      - run: python3 -m pip install ansible molecule molecule-docker 'requests<2.32.0'
+
+      - name: Converge the no-log-leak scenario and assert the token never appears
+        env:
+          ANSIBLE_ALLOW_BROKEN_CONDITIONALS: "true"
+          ANSIBLE_FORCE_COLOR: "0"
+        run: |
+          out="$(molecule converge -s no-log-leak 2>&1)"; rc=$?
+          echo "$out"
+          # Security assertion first, so an incidental converge failure can never hide a leak.
+          if grep -q 'CANARY_DEPLOY_TOKEN_must_not_appear' <<<"$out"; then
+            echo "::error::login credential leaked into play output; keep loop_control.label on the include loop"
+            exit 1
+          fi
+          # The converge must actually exercise the login path, else the guard is vacuous.
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::converge failed (rc=$rc); guard did not exercise the login path"
+            exit 1
+          fi
+          echo "ok: login credential never appeared in play output"
+
+      - name: Destroy
+        if: always()
+        run: molecule destroy -s no-log-leak || true

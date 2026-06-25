@@ -1,0 +1,47 @@
+---
+# Regression scenario for the container-login credential leak.
+# Runs the role with a single login-bearing container whose password is a
+# canary; CI captures the converge output and fails if the canary appears,
+# which it would if the "Start container" include loop lost its
+# loop_control.label (see tasks/main.yml).
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance-no-log-leak
+    image: geerlingguy/docker-debian12-ansible:latest
+    privileged: true
+    pre_build_image: true
+    cgroupns: host
+    cgroupns_mode: host
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    groups:
+      - containers
+
+provisioner:
+  name: ansible
+  options:
+    D: true
+  inventory:
+    group_vars:
+      containers:
+        netresearch_docker_containers:
+          - name: leakcanary
+            image: traefik/whoami
+            login:
+              registry: localhost:5000
+              username: leakcanary
+              password: "CANARY_DEPLOY_TOKEN_must_not_appear"
+
+verifier:
+  name: ansible

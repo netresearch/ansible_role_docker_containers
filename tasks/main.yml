@@ -31,3 +31,9 @@
 - name: Start container
   ansible.builtin.include_tasks: container.yml
   loop: "{{ netresearch_docker_containers }}"
+  loop_control:
+    # Without an explicit label Ansible prints the whole loop item on the
+    # "included: container.yml ... => (item=...)" line at default verbosity,
+    # which dumps item.login.password (a resolved registry deploy token) in
+    # cleartext. Limit the label to the container name.
+    label: "{{ item.name }}"
