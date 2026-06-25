@@ -1,0 +1,32 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  vars:
+    pip_install_packages:
+      - docker
+      - 'requests<2.32.0'
+    # Use vfs storage driver to avoid overlay-on-overlay mount failures in DinD
+    docker_daemon_options:
+      storage-driver: vfs
+
+  pre_tasks:
+    - name: Update cache
+      ansible.builtin.apt:
+        update_cache: true
+
+  roles:
+    - geerlingguy.pip
+    - geerlingguy.docker
+
+  post_tasks:
+    # A no-auth registry is enough: docker_login succeeds against it, so the
+    # converge stays green and the only thing under test is whether the deploy
+    # token shows up in the play output.
+    - name: Start a throwaway no-auth registry for the canary login
+      community.docker.docker_container:
+        name: leaktest-registry
+        image: registry:2
+        published_ports:
+          - "5000:5000"
+        state: started
