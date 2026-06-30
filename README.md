@@ -12,9 +12,29 @@ This Ansible role provides a way to deploy multiple Docker containers.
 
 ## Variables
 
-| Name                            | Default Value | Description |
-| ------------------------------- | ------------- | ----------- |
-| `netresearch_docker_containers` | `[]`          | Containers  |
+| Name                                 | Default Value | Description |
+| ------------------------------------ | ------------- | ----------- |
+| `netresearch_docker_containers`      | `[]`          | Containers  |
+| `netresearch_docker_containers_only` | `[]`          | Limit a run to these container names. Empty manages all. Accepts a list or a comma-separated string. |
+
+### Limiting a run to specific containers
+
+By default the role reconciles **every** container in
+`netresearch_docker_containers`. To act on only a subset (for example to deploy
+a single container without re-pulling/recreating the others on a shared host),
+set `netresearch_docker_containers_only`. It accepts a list or a
+comma-separated string and only manages the networks of the selected
+containers. An unknown name fails the run early.
+
+```shell
+# single container
+ansible-playbook site.yml --limit myhost --tags docker-containers \
+  -e 'netresearch_docker_containers_only=dns'
+
+# a group of containers
+ansible-playbook site.yml --limit myhost --tags docker-containers \
+  -e '{"netresearch_docker_containers_only": ["dns", "composer"]}'
+```
 
 ### Container definition
 
