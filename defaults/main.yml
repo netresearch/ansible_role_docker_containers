@@ -1,2 +1,9 @@
 ---
 netresearch_docker_containers: []
+
+# Optional: limit a run to specific container(s) by name.
+# Empty list (default) manages every defined container — backwards compatible.
+# Accepts a list (["dns", "composer"]) or a comma-separated string, the latter
+# being convenient on the command line:
+#   ansible-playbook ... -e 'netresearch_docker_containers_only=dns'
+netresearch_docker_containers_only: []
