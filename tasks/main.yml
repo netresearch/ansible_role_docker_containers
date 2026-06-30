@@ -19,10 +19,10 @@
     #   -e 'netresearch_docker_containers_only=dns'
     netresearch_docker_containers_only_list: >-
       {{
-        (netresearch_docker_containers_only | default([]))
-        if ((netresearch_docker_containers_only | default([])) is sequence
-            and (netresearch_docker_containers_only | default([])) is not string)
-        else ((netresearch_docker_containers_only | default('')) | string
+        (netresearch_docker_containers_only | default([], true))
+        if ((netresearch_docker_containers_only | default([], true)) is sequence
+            and (netresearch_docker_containers_only | default([], true)) is not string)
+        else ((netresearch_docker_containers_only | default('', true)) | string
               | split(',') | map('trim') | reject('equalto', '') | list)
       }}
 
