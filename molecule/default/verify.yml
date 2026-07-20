@@ -27,7 +27,9 @@
 
     - name: Uniquify network names
       ansible.builtin.set_fact:
-        netresearch_docker_containers_network_names: "{{ netresearch_docker_containers_network_names | default([]) + [ item.1 ] }}"
+        netresearch_docker_containers_network_names: >-
+          {{ netresearch_docker_containers_network_names |
+          default([]) + [ item.1 ] }}
       with_subelements:
         - "{{ netresearch_docker_containers }}"
         - networks
