@@ -1,72 +1,49 @@
+# Molecule + lint CI for the role.
+#
+# Jobs run through the org's shared reusable workflows in
+# netresearch/.github, so the pinned action versions (checkout,
+# setup-python) are maintained centrally instead of per-repo.
+name: Molecule
+
 on: push
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   molecule:
     name: Run molecule against role
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          cache: pip
-
+    uses: netresearch/.github/.github/workflows/ansible-molecule.yml@feat/ansible-reusables
+    permissions:
+      contents: read
+    with:
       # TODO: Remove `requests` version pin https://github.com/ansible-community/molecule-plugins/issues/256
-      - run: python3 -m pip install ansible molecule molecule-docker 'requests<2.32.0'
-
-      - run: molecule test
-        env:
-          ANSIBLE_ALLOW_BROKEN_CONDITIONALS: "true"
+      pip-packages: "ansible molecule molecule-docker requests<2.32.0"
+      molecule-env: |
+        ANSIBLE_ALLOW_BROKEN_CONDITIONALS=true
 
   lint:
     name: Lint role
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          cache: pip
-
-      - run: python3 -m pip install ansible ansible-lint yamllint
-      - run: ansible-galaxy install -r requirements.yml
-
-      - run: ansible-lint .
+    uses: netresearch/.github/.github/workflows/ansible-lint.yml@feat/ansible-reusables
+    permissions:
+      contents: read
+    with:
+      pip-packages: "ansible ansible-lint yamllint"
+      galaxy-requirements: requirements.yml
 
   no-log-leak:
     name: Guard container login credentials against play-output leak
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          cache: pip
-
-      - run: python3 -m pip install ansible molecule molecule-docker 'requests<2.32.0'
-
-      - name: Converge the no-log-leak scenario and assert the token never appears
-        env:
-          ANSIBLE_ALLOW_BROKEN_CONDITIONALS: "true"
-          ANSIBLE_FORCE_COLOR: "0"
-        run: |
-          out="$(molecule converge -s no-log-leak 2>&1)"; rc=$?
-          echo "$out"
-          # Security assertion first, so an incidental converge failure can never hide a leak.
-          if grep -q 'CANARY_DEPLOY_TOKEN_must_not_appear' <<<"$out"; then
-            echo "::error::login credential leaked into play output; keep loop_control.label on the include loop"
-            exit 1
-          fi
-          # The converge must actually exercise the login path, else the guard is vacuous.
-          if [ "$rc" -ne 0 ]; then
-            echo "::error::converge failed (rc=$rc); guard did not exercise the login path"
-            exit 1
-          fi
-          echo "ok: login credential never appeared in play output"
-
-      - name: Destroy
-        if: always()
-        run: molecule destroy -s no-log-leak || true
+    uses: netresearch/.github/.github/workflows/ansible-molecule.yml@feat/ansible-reusables
+    permissions:
+      contents: read
+    with:
+      # TODO: Remove `requests` version pin https://github.com/ansible-community/molecule-plugins/issues/256
+      pip-packages: "ansible molecule molecule-docker requests<2.32.0"
+      command: converge
+      scenario: no-log-leak
+      destroy-after: true
+      # Fails if the no_log deploy token leaks into play output, and if the
+      # converge itself did not run (so the guard cannot pass vacuously).
+      assert-output-absent: CANARY_DEPLOY_TOKEN_must_not_appear
+      molecule-env: |
+        ANSIBLE_ALLOW_BROKEN_CONDITIONALS=true
+        ANSIBLE_FORCE_COLOR=0
