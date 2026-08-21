@@ -1,10 +1,11 @@
 ---
-# {{ item }} is the current item in the loop, which is being passed in from
-# main.yml since Ansible doesn't support `loop`ing `block` statements.
-# ref: https://ericsysmin.com/2019/06/20/how-to-loop-blocks-of-code-in-ansible/
+# `item` is this container's full definition, provided by main.yml's include
+# as a lazy `vars:` expression keyed on the looped container NAME - so this
+# file's accesses are the first (and only) place the definition's values are
+# templated. Do not rename it without updating main.yml.
 
 - name: Log into container registry
-  community.general.docker_login:
+  community.docker.docker_login:
     registry: "{{ item.login.registry }}"
     username: "{{ item.login.username }}"
     password: "{{ item.login.password }}"
@@ -12,7 +13,7 @@
   changed_when: false
 
 - name: "Start container {{ item.name }}"
-  community.general.docker_container:
+  community.docker.docker_container:
     name: "{{ item.name }}"
     image: "{{ item.image }}"
     pull: true
@@ -33,7 +34,7 @@
     runtime: "{{ item.runtime | default(omit) }}"
 
 - name: Log out of container registry
-  community.general.docker_login:
+  community.docker.docker_login:
     registry: "{{ item.login.registry }}"
     username: "{{ item.login.username }}"
     password: "{{ item.login.password }}"

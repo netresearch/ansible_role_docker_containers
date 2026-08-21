@@ -1,0 +1,20 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  vars:
+    pip_install_packages:
+      - docker
+      - 'requests<2.32.0'
+    # Use vfs storage driver to avoid overlay-on-overlay mount failures in DinD
+    docker_daemon_options:
+      storage-driver: vfs
+
+  pre_tasks:
+    - name: Update cache
+      ansible.builtin.apt:
+        update_cache: true
+
+  roles:
+    - geerlingguy.pip
+    - geerlingguy.docker
