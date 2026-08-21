@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Inspect the good container
+      community.docker.docker_container_info:
+        name: good
+      register: nrc_good
+
+    - name: Inspect the broken container
+      community.docker.docker_container_info:
+        name: broken
+      register: nrc_broken
+
+    - name: Assert good runs and broken was never created
+      ansible.builtin.assert:
+        that:
+          - nrc_good.exists
+          - nrc_good.container.State.Running
+          - not nrc_broken.exists
+        fail_msg: >-
+          good exists={{ nrc_good.exists }},
+          broken exists={{ nrc_broken.exists }}
+        quiet: true

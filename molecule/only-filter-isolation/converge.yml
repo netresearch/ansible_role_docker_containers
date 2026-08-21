@@ -1,0 +1,60 @@
+---
+# Regression scenario for #31: a broken Jinja value in one container entry
+# must not block converging a DIFFERENT container selected via
+# netresearch_docker_containers_only.
+- name: Converge
+  hosts: all
+  become: true
+  tasks:
+    # Fixture-poison control: prove the broken entry's lookup genuinely
+    # fails when touched directly - guards against a silently defanged
+    # fixture making every later assertion vacuous.
+    - name: Verify the fixture poison is live
+      block:
+        - name: Touch the broken container's password directly
+          ansible.builtin.debug:
+            msg: >-
+              {{ (netresearch_docker_containers
+                  | selectattr('name', 'equalto', 'broken')
+                  | list | first).login.password }}
+        - name: The poison did not fire - the fixture is defanged
+          ansible.builtin.fail:
+            msg: expected the broken lookup to fail, it resolved instead
+      rescue:
+        - name: Assert the failure is the fixture's own lookup
+          ansible.builtin.assert:
+            that:
+              - "'nonexistent-fixture-secret' in (ansible_failed_result.msg | default(''))"
+            fail_msg: >-
+              the control probe failed for an unexpected reason:
+              {{ ansible_failed_result.msg | default('no message') }}
+            quiet: true
+
+    - name: "Converge only the good container despite the poisoned sibling"
+      ansible.builtin.include_role:
+        name: "netresearch.docker_containers"
+      vars:
+        netresearch_docker_containers_only: good
+
+    # Negative guard: an unknown name must fail on the role's own guard
+    # message - proving the guard compares derived name strings without ever
+    # templating the entries' values.
+    - name: Request an unknown container
+      block:
+        - name: Include the role with an unknown selection
+          ansible.builtin.include_role:
+            name: "netresearch.docker_containers"
+          vars:
+            netresearch_docker_containers_only: nonexistent
+        - name: The unknown-container guard did not fire
+          ansible.builtin.fail:
+            msg: expected the role to reject the selection
+      rescue:
+        - name: Assert the role's own guard fired (not the fixture poison)
+          ansible.builtin.assert:
+            that:
+              - "'requested unknown container' in (ansible_failed_result.msg | default(''))"
+              - "'nonexistent-fixture-secret' not in (ansible_failed_result.msg | default(''))"
+            fail_msg: >-
+              wrong failure: {{ ansible_failed_result.msg | default('no message') }}
+            quiet: true

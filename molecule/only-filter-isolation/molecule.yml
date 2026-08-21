@@ -1,0 +1,56 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance
+    image: geerlingguy/docker-debian12-ansible:latest
+    privileged: true
+    pre_build_image: true
+    cgroupns: host
+    cgroupns_mode: host
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    groups:
+      - containers
+
+provisioner:
+  name: ansible
+  options:
+    D: true
+  inventory:
+    group_vars:
+      containers:
+        # Regression fixture for #31: `broken` embeds a Jinja lookup that can
+        # never resolve. With the only-filter selecting `good`, the role must
+        # converge without ever templating broken's values (lazy engine,
+        # ansible-core >= 2.19). The filter is set in converge.yml.
+        netresearch_docker_containers:
+          - name: broken
+            image: traefik/whoami
+            login:
+              registry: registry.invalid
+              username: nobody
+              password: "{{ lookup('file', '/nonexistent-fixture-secret') }}"
+            networks:
+              - name: broken_net
+          - name: good
+            image: traefik/whoami
+            networks: []
+
+verifier:
+  name: ansible
+
+lint: |
+  set -e
+  yamllint .
+  ansible-lint

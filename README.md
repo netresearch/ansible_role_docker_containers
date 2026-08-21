@@ -8,7 +8,7 @@ This Ansible role provides a way to deploy multiple Docker containers.
 
 - Debian 11 (bullseye) / 12 (bookworm)
 - Docker on target systems
-- Ansible 2.15.0
+- ansible-core 2.19 or newer
 
 ## Variables
 
@@ -36,6 +36,22 @@ ansible-playbook site.yml --limit myhost --tags docker-containers \
   -e '{"netresearch_docker_containers_only": ["dns", "composer"]}'
 ```
 
+The role selects and iterates by container **name** (names must be unique -
+duplicates fail the run) and resolves each entry's full definition only in
+that container's own iteration. On ansible-core >= 2.19 (the role's minimum,
+where templating is lazy per value) this means a broken Jinja value in an
+entry **not selected for the run** - say a secret lookup against an
+unreachable backend - can never block the selected containers (#31). Three
+limits:
+
+- `name` must be a **plain string** (a templated name defeats the name-first
+  selection);
+- among the CO-selected entries ordinary fail-fast still applies, and their
+  `networks` values are all resolved before the first container starts;
+- on ansible-core **< 2.19** the engine templates the whole list on any
+  access, so the isolation cannot hold there: keep unresolvable lookups out of
+  the shared list entirely on old cores.
+
 ### Container definition
 
 ```yml
@@ -47,22 +63,22 @@ netresearch_docker_containers:
       registry: string
       username: string
       password: string
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     # You have to provide this, an empty array is fine.
     networks: []
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     network_mode: string
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     labels: {}
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     restart_policy: string
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     ports: []
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     env: {}
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     mounts: []
-    # Just like the one in `community.general.docker_container`
+    # Just like the one in `community.docker.docker_container`
     device_requests: []
 ```
 

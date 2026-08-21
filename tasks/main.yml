@@ -12,6 +12,30 @@
   when: >
     docker_status.failed | bool or docker_status.state != "started"
 
+# Everything below works on container NAMES (plain strings) and resolves a
+# container's full definition only inside the task that actually manages it.
+# On ansible-core >= 2.19 templating is lazy per value, so this guarantees a
+# broken Jinja value (e.g. a failing secret lookup) in one entry can never
+# block other entries - values of unselected containers are simply never
+# rendered (#31). The `name` key itself must therefore be a plain string.
+- name: Derive the defined container names
+  ansible.builtin.set_fact:
+    netresearch_docker_containers_names: >-
+      {{ netresearch_docker_containers | map(attribute='name') | list }}
+
+# Names are the selection unit: with duplicates, every occurrence would
+# resolve to the FIRST matching definition and later ones would be silently
+# ignored - fail loudly instead (pre-rewrite behavior applied each duplicate
+# in order, which was equally surprising, just differently).
+- name: Fail on duplicate container names
+  ansible.builtin.fail:
+    msg: >-
+      netresearch_docker_containers must use unique names - defined:
+      {{ netresearch_docker_containers_names | sort | join(', ') }}
+  when: >-
+    netresearch_docker_containers_names | unique | length
+    != netresearch_docker_containers_names | length
+
 - name: Resolve the container selection filter to a list
   ansible.builtin.set_fact:
     # Accept either a real list (["dns", "composer"]) or a comma-separated
@@ -31,52 +55,60 @@
     msg: >-
       netresearch_docker_containers_only requested unknown container(s):
       {{ netresearch_docker_containers_only_list
-         | difference(netresearch_docker_containers | map(attribute='name') | list) }}
+         | difference(netresearch_docker_containers_names) }}
   when:
     - netresearch_docker_containers_only_list | length > 0
     - (netresearch_docker_containers_only_list
-       | difference(netresearch_docker_containers | map(attribute='name') | list))
+       | difference(netresearch_docker_containers_names))
        | length > 0
 
 - name: Select the containers to manage (all unless a filter is given)
   ansible.builtin.set_fact:
-    netresearch_docker_containers_selected: >-
+    netresearch_docker_containers_selected_names: >-
       {{
-        netresearch_docker_containers
+        netresearch_docker_containers_names
         if (netresearch_docker_containers_only_list | length == 0)
-        else (netresearch_docker_containers
-              | selectattr('name', 'in', netresearch_docker_containers_only_list) | list)
+        else (netresearch_docker_containers_names
+              | select('in', netresearch_docker_containers_only_list) | list)
       }}
 
 - name: Report the active container selection
   ansible.builtin.debug:
     msg: >-
-      Limiting this run to {{ netresearch_docker_containers_selected | map(attribute='name') | list }}
-      (of {{ netresearch_docker_containers | map(attribute='name') | list }})
+      Limiting this run to {{ netresearch_docker_containers_selected_names }}
+      (of {{ netresearch_docker_containers_names }})
   when: netresearch_docker_containers_only_list | length > 0
 
-- name: Uniquify network names
+- name: Collect the network names of the selected containers
   ansible.builtin.set_fact:
-    netresearch_docker_containers_network_names: >
-      {{ netresearch_docker_containers_network_names | default([]) + [ item.1 ] }}
-  with_subelements:
-    - "{{ netresearch_docker_containers_selected }}"
-    - networks
-    - skip_missing: true
-  no_log: true
+    netresearch_docker_containers_network_names: >-
+      {{ (netresearch_docker_containers_network_names | default([]))
+         + (nrc_definition.networks | default([])) }}
+  loop: "{{ netresearch_docker_containers_selected_names }}"
+  loop_control:
+    loop_var: nrc_name
+    label: "{{ nrc_name }}"
+  vars:
+    nrc_definition: >-
+      {{ netresearch_docker_containers
+         | selectattr('name', 'equalto', nrc_name) | list | first }}
 
 - name: Create networks
   loop: "{{ netresearch_docker_containers_network_names | default([]) | flatten | unique }}"
   when: item.name != "default"
-  community.general.docker_network:
+  community.docker.docker_network:
     name: "{{ item.name }}"
 
 - name: Start container
   ansible.builtin.include_tasks: container.yml
-  loop: "{{ netresearch_docker_containers_selected }}"
+  loop: "{{ netresearch_docker_containers_selected_names }}"
   loop_control:
-    # Without an explicit label Ansible prints the whole loop item on the
-    # "included: container.yml ... => (item=...)" line at default verbosity,
-    # which dumps item.login.password (a resolved registry deploy token) in
-    # cleartext. Limit the label to the container name.
-    label: "{{ item.name }}"
+    # Loop over the name string and resolve the definition via `vars` below:
+    # the definition (and any lookups in it) is only templated inside this
+    # container's own iteration.
+    loop_var: nrc_name
+    label: "{{ nrc_name }}"
+  vars:
+    item: >-
+      {{ netresearch_docker_containers
+         | selectattr('name', 'equalto', nrc_name) | list | first }}
