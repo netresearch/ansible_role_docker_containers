@@ -48,12 +48,12 @@
             netresearch_docker_containers_only: nonexistent
         - name: The unknown-container guard did not fire
           ansible.builtin.fail:
-            msg: expected the role to reject the unknown container name
+            msg: expected the role to reject the selection
       rescue:
         - name: Assert the role's own guard fired (not the fixture poison)
           ansible.builtin.assert:
             that:
-              - "'unknown container' in (ansible_failed_result.msg | default(''))"
+              - "'requested unknown container' in (ansible_failed_result.msg | default(''))"
               - "'nonexistent-fixture-secret' not in (ansible_failed_result.msg | default(''))"
             fail_msg: >-
               wrong failure: {{ ansible_failed_result.msg | default('no message') }}

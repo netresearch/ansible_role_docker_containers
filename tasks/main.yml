@@ -23,6 +23,19 @@
     netresearch_docker_containers_names: >-
       {{ netresearch_docker_containers | map(attribute='name') | list }}
 
+# Names are the selection unit: with duplicates, every occurrence would
+# resolve to the FIRST matching definition and later ones would be silently
+# ignored - fail loudly instead (pre-rewrite behavior applied each duplicate
+# in order, which was equally surprising, just differently).
+- name: Fail on duplicate container names
+  ansible.builtin.fail:
+    msg: >-
+      netresearch_docker_containers must use unique names - defined:
+      {{ netresearch_docker_containers_names | sort | join(', ') }}
+  when: >-
+    netresearch_docker_containers_names | unique | length
+    != netresearch_docker_containers_names | length
+
 - name: Resolve the container selection filter to a list
   ansible.builtin.set_fact:
     # Accept either a real list (["dns", "composer"]) or a comma-separated
