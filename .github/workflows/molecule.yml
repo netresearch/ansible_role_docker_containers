@@ -62,3 +62,26 @@ jobs:
       molecule-env: |
         ANSIBLE_ALLOW_BROKEN_CONDITIONALS=true
         ANSIBLE_FORCE_COLOR=0
+
+  env-redact:
+    name: Guard env values against play-output leak (${{ matrix.core }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # the oldest supported ansible-core and the latest release
+        core: ["ansible-core==2.19.*", "ansible"]
+    uses: netresearch/.github/.github/workflows/ansible-molecule.yml@main
+    permissions:
+      contents: read
+    with:
+      # TODO: Remove `requests` version pin https://github.com/ansible-community/molecule-plugins/issues/256
+      pip-packages: "${{ matrix.core }} molecule molecule-docker requests<2.32.0"
+      command: test
+      scenario: env-redact
+      destroy-after: true
+      # Fails if a secret env value reaches the output (--diff, -v, -vvv), and
+      # if the run itself failed (the verify step proves the real values ran).
+      assert-output-absent: CANARY_ENV_must_not_appear
+      molecule-env: |
+        ANSIBLE_ALLOW_BROKEN_CONDITIONALS=true
+        ANSIBLE_FORCE_COLOR=0
