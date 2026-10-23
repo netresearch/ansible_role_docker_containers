@@ -16,6 +16,51 @@ This Ansible role provides a way to deploy multiple Docker containers.
 | ------------------------------------ | ------------- | ----------- |
 | `netresearch_docker_containers`      | `[]`          | Containers  |
 | `netresearch_docker_containers_only` | `[]`          | Limit a run to these container names. Empty manages all. Accepts a list or a comma-separated string. |
+| `netresearch_docker_containers_redact_env` | `true` | Mask every container env value in task output. A container can override it with `redact_env`. |
+
+### Env values in task output
+
+`community.docker.docker_container` prints every `NAME=value` env entry of a
+recreated container in its `--diff`, the full container config with `-v` and
+the module arguments with `-vvv`. The role therefore runs the module through
+its own action plugin, which masks **all** env values in that output by
+default. The rest of the diff (image, labels, ports, mounts) stays readable,
+error messages stay readable apart from the masked values, and the containers
+are not changed in any way.
+
+Per container, `env_visible` lists the env names that stay readable, and
+`redact_env: false` switches masking off for the whole container. The role-wide
+default is `netresearch_docker_containers_redact_env`.
+
+```yml
+netresearch_docker_containers:
+  - name: app
+    image: example/app
+    env:
+      DB_PASSWORD: "{{ lookup('community.hashi_vault.hashi_vault', '...') }}"  # masked
+      LOG_LEVEL: info                                                           # readable
+    env_visible: [LOG_LEVEL]
+```
+
+A changed value shows up as `DB_PASSWORD=******** (changed)` on the new side of
+the diff, so a rotation is still visible. A name in `env_visible` that is not in
+`env` fails the run (it names the key, never a value).
+
+Limits to know:
+
+- Masking covers the output only. The values are still part of the container
+  configuration on the host (`docker inspect`).
+- Everything under an env key is masked, including the variables the image
+  defines itself (such as `PATH`). Other output (command, labels, mounts) is
+  left as it is, so a secret placed there is not masked.
+- Masked values of 8 or more characters are also removed from error messages.
+  Shorter values, and values that only come from an `env_file`, are masked by
+  name only.
+- The `netresearch_docker_container` action only exists inside the role, do not
+  call it from your own tasks.
+- If `module_defaults` are set for the play, the plugin applies them to the
+  wrapped module through an ansible-core helper. When that helper does not exist
+  in the installed ansible-core, the run fails instead of ignoring the defaults.
 
 ### Limiting a run to specific containers
 
@@ -76,6 +121,10 @@ netresearch_docker_containers:
     ports: []
     # Just like the one in `community.docker.docker_container`
     env: {}
+    # `false` shows this container's env values in task output (see above)
+    redact_env: true
+    # Env names that stay readable in task output although masking is on
+    env_visible: []
     # Just like the one in `community.docker.docker_container`
     mounts: []
     # Just like the one in `community.docker.docker_container`
@@ -154,21 +203,29 @@ netresearch_docker_containers:
 
 ## Testing
 
-For simpler testing we have included molecule tests, which you can run with
+For simpler testing we have included molecule tests. They need a local Docker
+daemon and [uv](https://docs.astral.sh/uv/); nothing is installed into your
+Python environment:
 
 ```shell
-molecule test
+# one scenario, with the ansible-core you want to test against
+uvx --from molecule --with 'molecule-plugins[docker]' --with 'ansible-core==2.20.*' \
+  molecule test -s env-redact
 ```
 
-### Prerequisites
+Run `molecule test` without `-s` for the `default` scenario. Scenarios:
 
-- `ansible`
-- `molecule`
-- A molecule driver depending on which scenario you want to run:
-  - `default` => `molecule-docker`
-  - `with-vagrant` => `molecule_vagrant`
+| Scenario | What it guards |
+| -------- | -------------- |
+| `default` | The role end to end, including the `state: absent` tombstone entry. |
+| `only-filter-isolation` | `netresearch_docker_containers_only` never templates unselected entries. |
+| `no-log-leak` | A registry password never reaches the play output. |
+| `env-redact` | Env values never reach the play output (`--diff`, `-v`, `-vvv`) unless allowed, and the containers still run with the real values. |
+| `with-vagrant` | The role on a Vagrant VM (needs `molecule-vagrant`, not run in CI). |
 
-For further information we have included the installation guide for `molecule` [here](./molecule/default/INSTALL.rst).
+The leak guards (`no-log-leak`, `env-redact`) only turn red in CI, which greps
+the output for their canary string; the run itself passes either way. Check it yourself with
+the same `uvx` command with `2>&1 | grep -F CANARY_ENV_must_not_appear`, which must print nothing.
 
 ## License
 

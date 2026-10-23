@@ -1,0 +1,51 @@
+---
+# Regression scenario for secret env values in --diff and -v output.
+# converge.yml applies the role twice with rotated canary values, so the second
+# pass recreates the containers and the module's before/after diff would print
+# both the old and the new value. The provisioner runs with --diff and -vvv, so
+# the container dump and the module invocation are covered as well. CI fails if
+# the canary prefix appears anywhere in the output; verify.yml checks that the
+# containers still run with the real values (masking must not change them).
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance-env-redact
+    image: geerlingguy/docker-debian12-ansible:latest
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    groups:
+      - containers
+
+provisioner:
+  name: ansible
+  options:
+    D: true
+  env:
+    # -vvv prints the container dump (Config.Env) and the module invocation.
+    ANSIBLE_VERBOSITY: "3"
+
+# The two converge passes change the env on purpose, so there is no idempotence step.
+scenario:
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - verify
+    - destroy
+
+verifier:
+  name: ansible
