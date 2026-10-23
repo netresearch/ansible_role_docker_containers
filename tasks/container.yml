@@ -13,7 +13,11 @@
   changed_when: false
 
 - name: "Start container {{ item.name }}"
-  community.docker.docker_container:
+  # community.docker.docker_container through the role's action plugin, which masks
+  # env values in --diff, -v and -vvv output (action_plugins/).
+  netresearch_docker_container:
+    redact_env: "{{ item.redact_env | default(netresearch_docker_containers_redact_env, true) }}"
+    env_visible: "{{ item.env_visible | default([]) }}"
     name: "{{ item.name }}"
     image: "{{ item.image }}"
     pull: true

@@ -1,0 +1,33 @@
+---
+# Masking is output-only: the containers must run with the real, rotated values.
+# The info tasks use no_log so a failure cannot print the canaries itself.
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Read the default container
+      community.docker.docker_container_info:
+        name: envdefault
+      register: nrc_default
+      no_log: true
+
+    - name: Read the unmasked container
+      community.docker.docker_container_info:
+        name: envoff
+      register: nrc_off
+      no_log: true
+
+    - name: The containers run with the rotated, unmasked values
+      ansible.builtin.assert:
+        that:
+          - nrc_default.exists
+          - nrc_off.exists
+          - "'APP_PASSWORD=CANARY_ENV_must_not_appear_pw_v2' in nrc_default.container.Config.Env"
+          - "'APP_DSN=redis://u:CANARY_ENV_must_not_appear_dsn_v2@h' in nrc_default.container.Config.Env"
+          - "'PLAIN=visible_v2' in nrc_default.container.Config.Env"
+          - "'odd.name=CANARY_ENV_must_not_appear_dot_v2' in nrc_default.container.Config.Env"
+          - "'odd-name=CANARY_ENV_must_not_appear_hyphen_v2' in nrc_default.container.Config.Env"
+          - nrc_default.container.Config.Labels.nrc_module_default == 'applied'
+          - "'SHOWN=shown_v2' in nrc_off.container.Config.Env"
+        fail_msg: "a container does not run with the expected env values (values withheld on purpose)"
+        quiet: true

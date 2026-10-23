@@ -17,7 +17,6 @@ platforms:
     image: geerlingguy/docker-debian12-ansible:latest
     privileged: true
     pre_build_image: true
-    cgroupns: host
     cgroupns_mode: host
     command: /lib/systemd/systemd
     tmpfs:

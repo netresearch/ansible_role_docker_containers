@@ -7,3 +7,7 @@ netresearch_docker_containers: []
 # being convenient on the command line:
 #   ansible-playbook ... -e 'netresearch_docker_containers_only=dns'
 netresearch_docker_containers_only: []
+
+# Mask every env value in all task output (--diff, -v, -vvv, errors). A container
+# can set `redact_env: false`, or list names that stay readable in `env_visible`.
+netresearch_docker_containers_redact_env: true
