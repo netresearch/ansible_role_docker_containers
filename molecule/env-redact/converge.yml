@@ -1,0 +1,38 @@
+---
+# Two passes: create, then rotate every canary (this forces a recreate whose diff
+# shows env before/after).
+#   envdefault: every value is masked by default, except PLAIN (env_visible).
+#               The odd names (dot, hyphen) are masked like any other.
+#   envoff:     redact_env: false switches masking off, the value stays readable.
+# The role runs with module_defaults for the wrapped module, which the action
+# plugin has to pass on (verify.yml checks the label).
+- name: Converge
+  hosts: all
+  become: true
+  module_defaults:
+    community.docker.docker_container:
+      labels:
+        nrc_module_default: applied
+  tasks:
+    - name: "Apply the role (pass {{ nrc_pass }})"
+      ansible.builtin.include_role:
+        name: "netresearch.docker_containers"
+      loop: [v1, v2]
+      loop_control:
+        loop_var: nrc_pass
+      vars:
+        netresearch_docker_containers:
+          - name: envdefault
+            image: traefik/whoami
+            env:
+              APP_PASSWORD: "CANARY_ENV_must_not_appear_pw_{{ nrc_pass }}"
+              APP_DSN: "redis://u:CANARY_ENV_must_not_appear_dsn_{{ nrc_pass }}@h"
+              PLAIN: "visible_{{ nrc_pass }}"
+              "odd.name": "CANARY_ENV_must_not_appear_dot_{{ nrc_pass }}"
+              "odd-name": "CANARY_ENV_must_not_appear_hyphen_{{ nrc_pass }}"
+            env_visible: [PLAIN]
+          - name: envoff
+            image: traefik/whoami
+            env:
+              SHOWN: "shown_{{ nrc_pass }}"
+            redact_env: false
